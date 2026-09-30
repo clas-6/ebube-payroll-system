@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<body style="font-family: Arial; padding: 20px;">
+    <h1>Run Payroll</h1>
+    <a href="/">Back to Home</a><hr>
+    <form action="/calculate-payroll" method="POST">
+        <h3>Enter hours worked for hourly employees:</h3>
+        <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; text-align: left;">
+            <tr><th>Name</th><th>Pay Type</th><th>Hours Worked</th></tr>
+            <% employees.forEach(function(emp) { %>
+                <tr>
+                    <td><%= emp.name %></td>
+                    <td><%= emp.pay_type === 'salary' ? 'Salaried' : 'Hourly' %></td>
+                    <td>
+                        <% if(emp.pay_type === 'hourly') { %>
+                            <input type="number" step="0.5" name="hours[<%= emp.id %>]" value="40" required>
+                        <% } else { %>
+                            <em>N/A (Standard Bi-weekly)</em>
+                        <% } %>
+                    </td>
+                </tr>
+            <% }); %>
+        </table>
+        <br><button type="submit" style="padding: 10px; font-size: 16px;">Calculate Pay</button>
+    </form>
+</body>
+</html>

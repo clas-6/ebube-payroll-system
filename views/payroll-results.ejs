@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<body style="font-family: Arial; padding: 20px;">
+    <h1>Payroll Results</h1>
+    <a href="/">Back to Home</a><hr>
+    <p><em>Note: System uses a 15% flat tax rate and calculates bi-weekly pay for salaried employees.</em></p>
+    <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; text-align: left;">
+        <tr style="background-color: #f2f2f2;">
+            <th>Name</th><th>Pay Type</th><th>Gross Pay</th><th>Taxes (15%)</th><th>Net Pay</th>
+        </tr>
+        <% payStubs.forEach(function(stub) { %>
+            <tr>
+                <td><%= stub.name %></td>
+                <td><%= stub.payType %></td>
+                <td>$<%= stub.grossPay %></td>
+                <td><span style="color: red;">-$<%= stub.taxes %></span></td>
+                <td><strong><span style="color: green;">$<%= stub.netPay %></span></strong></td>
+            </tr>
+        <% }); %>
+    </table>
+</body>
+</html>

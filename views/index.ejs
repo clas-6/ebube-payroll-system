@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<body style="font-family: Arial; padding: 20px;">
+    <h1>Employee List</h1>
+    <a href="/add-employee">Add New Employee</a> | <a href="/payroll">Run Payroll</a>
+    <hr>
+    <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; text-align: left;">
+        <tr><th>ID</th><th>Name</th><th>Pay Type</th><th>Rate</th></tr>
+        <% employees.forEach(function(emp) { %>
+            <tr>
+                <td><%= emp.id %></td>
+                <td><%= emp.name %></td>
+                <td><%= emp.pay_type === 'salary' ? 'Salaried (Annual)' : 'Hourly' %></td>
+                <td>$<%= emp.rate %></td>
+            </tr>
+        <% }); %>
+    </table>
+</body>
+</html>

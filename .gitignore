@@ -1,0 +1,4 @@
+node_modules/
+payroll.db
+.env
+.DS_Store
