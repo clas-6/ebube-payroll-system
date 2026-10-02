@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Payroll Run Detail</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 24px; background: #fafafa; color: #222; }
+        h1 { margin-top: 0; }
+        nav a { margin-right: 12px; }
+        table { border-collapse: collapse; width: 100%; background: #fff; margin-bottom: 24px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background: #f2f2f2; }
+        .num { text-align: right; font-variant-numeric: tabular-nums; }
+        .meta dt { font-weight: bold; float: left; clear: left; width: 160px; }
+        .meta dd { margin-left: 170px; margin-bottom: 4px; }
+        .immutable { color: #666; font-size: 0.9em; }
+        tfoot td { font-weight: bold; background: #f7f7f7; border-top: 2px solid #999; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/">Home</a>
+        <a href="/add-employee">Add Employee</a>
+        <a href="/payroll">Run Payroll</a>
+        <a href="/history">History</a>
+    </nav>
+    <h1>Payroll Run #<%= period.id %></h1>
+    <p class="immutable">Read-only: finalized payroll records are immutable.</p>
+
+    <dl class="meta">
+        <dt>Period label</dt><dd><%= period.label %></dd>
+        <dt>Pay frequency</dt><dd><%= period.frequency %></dd>
+        <dt>Tax rate applied</dt><dd><%= (period.taxRate * 100).toFixed(2) %>%</dd>
+        <dt>Employees</dt><dd><%= period.employeeCount %></dd>
+        <dt>Finalized (UTC)</dt><dd><%= period.finalizedAt %></dd>
+    </dl>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th><th>Pay Type</th><th class="num">Hours</th>
+                <th class="num">Gross Pay</th><th class="num">Tax</th><th class="num">Net Pay</th>
+            </tr>
+        </thead>
+        <tbody>
+        <% stubs.forEach(function(s) { %>
+            <tr>
+                <td><%= s.name %></td>
+                <td><%= s.payType %></td>
+                <td class="num"><%= s.hours === null ? '-' : s.hours %></td>
+                <td class="num">$<%= s.grossPay %></td>
+                <td class="num">-$<%= s.taxes %></td>
+                <td class="num"><strong>$<%= s.netPay %></strong></td>
+            </tr>
+        <% }); %>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3">Totals</td>
+                <td class="num">$<%= period.grossPay %></td>
+                <td class="num">-$<%= period.taxes %></td>
+                <td class="num">$<%= period.netPay %></td>
+            </tr>
+        </tfoot>
+    </table>
+</body>
+</html>

@@ -5,6 +5,11 @@
     <a href="/">Back to Home</a><hr>
     <% if (error) { %><p style="color: red;"><%= error %></p><% } %>
     <form action="/calculate-payroll" method="POST">
+        <p>
+            <label>Period label:</label><br>
+            <input type="text" name="period_label" maxlength="80" placeholder="e.g. 2026-01-01 to 2026-01-14">
+            <small>(Leave blank to use today's date. Each label must be unique.)</small>
+        </p>
         <h3>Enter hours worked for hourly employees:</h3>
         <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; text-align: left;">
             <tr><th>Name</th><th>Pay Type</th><th>Hours Worked</th></tr>

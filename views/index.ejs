@@ -2,7 +2,11 @@
 <html>
 <body style="font-family: Arial; padding: 20px;">
     <h1>Employee List</h1>
-    <a href="/add-employee">Add New Employee</a> | <a href="/payroll">Run Payroll</a>
+    <nav>
+        <a href="/add-employee">Add New Employee</a>
+        <a href="/payroll">Run Payroll</a>
+        <a href="/history">Payroll History</a>
+    </nav>
     <hr>
     <% if (notice) { %><p style="color: green;"><%= notice %></p><% } %>
     <% if (error) { %><p style="color: red;"><%= error %></p><% } %>

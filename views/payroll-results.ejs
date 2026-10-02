@@ -1,22 +1,56 @@
 <!DOCTYPE html>
 <html>
-<body style="font-family: Arial; padding: 20px;">
+<head>
+    <title>Payroll Results</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 24px; background: #fafafa; color: #222; }
+        h1 { margin-top: 0; }
+        nav a { margin-right: 12px; }
+        table { border-collapse: collapse; width: 100%; background: #fff; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background: #f2f2f2; }
+        .num { text-align: right; font-variant-numeric: tabular-nums; }
+        tfoot td { font-weight: bold; background: #f7f7f7; border-top: 2px solid #999; }
+        .saved { color: #1a7f37; }
+        .disclaimer { color: #666; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/">Home</a>
+        <a href="/add-employee">Add Employee</a>
+        <a href="/payroll">Run Payroll</a>
+        <a href="/history">History</a>
+    </nav>
     <h1>Payroll Results</h1>
-    <a href="/">Back to Home</a><hr>
-    <p><em>Note: System uses a 15% flat tax rate and calculates bi-weekly pay for salaried employees. Demo figures only - not legal or tax advice.</em></p>
-    <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; text-align: left;">
-        <tr style="background-color: #f2f2f2;">
-            <th>Name</th><th>Pay Type</th><th>Gross Pay</th><th>Taxes (15%)</th><th>Net Pay</th>
-        </tr>
+    <p class="saved">Saved as an immutable record: <strong><%= label %></strong> (run #<%= periodId %>).</p>
+    <p class="disclaimer">Note: System uses a 15% flat tax rate and calculates bi-weekly pay for salaried employees. Demo figures only - not legal or tax advice.</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th><th>Pay Type</th><th class="num">Gross Pay</th><th class="num">Taxes (15%)</th><th class="num">Net Pay</th>
+            </tr>
+        </thead>
+        <tbody>
         <% payStubs.forEach(function(stub) { %>
             <tr>
                 <td><%= stub.name %></td>
                 <td><%= stub.payType %></td>
-                <td>$<%= stub.grossPay %></td>
-                <td><span style="color: red;">-$<%= stub.taxes %></span></td>
-                <td><strong><span style="color: green;">$<%= stub.netPay %></span></strong></td>
+                <td class="num">$<%= stub.grossPay %></td>
+                <td class="num"><span style="color: red;">-$<%= stub.taxes %></span></td>
+                <td class="num"><strong><span style="color: green;">$<%= stub.netPay %></span></strong></td>
             </tr>
         <% }); %>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="2">Totals</td>
+                <td class="num">$<%= totals.grossPay %></td>
+                <td class="num">-$<%= totals.taxes %></td>
+                <td class="num">$<%= totals.netPay %></td>
+            </tr>
+        </tfoot>
     </table>
+    <p><a href="/history/<%= periodId %>">View this run in history</a></p>
 </body>
 </html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Payroll History</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 24px; background: #fafafa; color: #222; }
+        h1 { margin-top: 0; }
+        nav a { margin-right: 12px; }
+        table { border-collapse: collapse; width: 100%; background: #fff; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background: #f2f2f2; }
+        .empty { color: #666; font-style: italic; }
+        .num { text-align: right; font-variant-numeric: tabular-nums; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/">Home</a>
+        <a href="/add-employee">Add Employee</a>
+        <a href="/payroll">Run Payroll</a>
+        <a href="/history">History</a>
+    </nav>
+    <h1>Payroll History</h1>
+    <p><em>Finalized runs are immutable - they cannot be edited or deleted.</em></p>
+
+    <% if (periods.length === 0) { %>
+        <p class="empty">No payroll runs yet. Run payroll to create the first one.</p>
+    <% } else { %>
+    <table>
+        <tr>
+            <th>Period</th>
+            <th>Frequency</th>
+            <th>Employees</th>
+            <th class="num">Gross</th>
+            <th class="num">Tax</th>
+            <th class="num">Net</th>
+            <th>Finalized (UTC)</th>
+            <th></th>
+        </tr>
+        <% periods.forEach(function(p) { %>
+            <tr>
+                <td><%= p.label %></td>
+                <td><%= p.frequency %></td>
+                <td class="num"><%= p.employeeCount %></td>
+                <td class="num">$<%= p.grossPay %></td>
+                <td class="num">$<%= p.taxes %></td>
+                <td class="num"><strong>$<%= p.netPay %></strong></td>
+                <td><%= p.finalizedAt %></td>
+                <td><a href="/history/<%= p.id %>">View</a></td>
+            </tr>
+        <% }); %>
+    </table>
+    <% } %>
+</body>
+</html>
