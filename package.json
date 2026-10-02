@@ -1,10 +1,11 @@
 {
   "name": "ebube-payroll-system",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Payroll prototype (MVP) - Express + SQLite + EJS",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js",
+    "test": "node --test --test-reporter spec"
   },
   "keywords": [],
   "author": "",
