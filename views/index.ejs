@@ -4,6 +4,8 @@
     <h1>Employee List</h1>
     <a href="/add-employee">Add New Employee</a> | <a href="/payroll">Run Payroll</a>
     <hr>
+    <% if (notice) { %><p style="color: green;"><%= notice %></p><% } %>
+    <% if (error) { %><p style="color: red;"><%= error %></p><% } %>
     <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; text-align: left;">
         <tr><th>ID</th><th>Name</th><th>Pay Type</th><th>Rate</th></tr>
         <% employees.forEach(function(emp) { %>
@@ -11,7 +13,7 @@
                 <td><%= emp.id %></td>
                 <td><%= emp.name %></td>
                 <td><%= emp.pay_type === 'salary' ? 'Salaried (Annual)' : 'Hourly' %></td>
-                <td>$<%= emp.rate %></td>
+                <td>$<%= emp.rate_display %></td>
             </tr>
         <% }); %>
     </table>

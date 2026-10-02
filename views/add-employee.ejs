@@ -3,17 +3,18 @@
 <body style="font-family: Arial; padding: 20px;">
     <h1>Add Employee</h1>
     <a href="/">Back to Home</a><hr>
+    <% if (error) { %><p style="color: red;"><%= error %></p><% } %>
     <form action="/add-employee" method="POST">
-        <p><label>Name:</label><br><input type="text" name="name" required></p>
+        <p><label>Name:</label><br><input type="text" name="name" maxlength="120" value="<%= values.name || '' %>" required></p>
         <p>
             <label>Pay Type:</label><br>
             <select name="pay_type" required>
-                <option value="hourly">Hourly</option>
-                <option value="salary">Salaried (Annual)</option>
+                <option value="hourly" <%= values.pay_type === 'hourly' ? 'selected' : '' %>>Hourly</option>
+                <option value="salary" <%= values.pay_type === 'salary' ? 'selected' : '' %>>Salaried (Annual)</option>
             </select>
         </p>
         <p>
-            <label>Rate ($):</label><br><input type="number" step="0.01" name="rate" required>
+            <label>Rate ($):</label><br><input type="number" step="0.01" min="0" name="rate" value="<%= values.rate || '' %>" required>
             <small>(Enter hourly wage or annual salary)</small>
         </p>
         <button type="submit">Save Employee</button>

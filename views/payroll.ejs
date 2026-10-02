@@ -3,6 +3,7 @@
 <body style="font-family: Arial; padding: 20px;">
     <h1>Run Payroll</h1>
     <a href="/">Back to Home</a><hr>
+    <% if (error) { %><p style="color: red;"><%= error %></p><% } %>
     <form action="/calculate-payroll" method="POST">
         <h3>Enter hours worked for hourly employees:</h3>
         <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; text-align: left;">
@@ -13,7 +14,7 @@
                     <td><%= emp.pay_type === 'salary' ? 'Salaried' : 'Hourly' %></td>
                     <td>
                         <% if(emp.pay_type === 'hourly') { %>
-                            <input type="number" step="0.5" name="hours[<%= emp.id %>]" value="40" required>
+                            <input type="number" step="0.5" min="0" max="1000" name="hours_<%= emp.id %>" value="40" required>
                         <% } else { %>
                             <em>N/A (Standard Bi-weekly)</em>
                         <% } %>
