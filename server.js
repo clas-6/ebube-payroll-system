@@ -18,6 +18,7 @@ const {
     listAudit,
 } = require('./src/services/auth');
 const { csrfTokenMiddleware, csrfProtection } = require('./src/middleware/csrf');
+const { withWriteLock } = require('./src/db/writeLock');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -193,21 +194,30 @@ app.post('/add-employee', requireAuth, requireRole('admin'), (req, res, next) =>
         return next(err);
     }
 
-    db.run(
-        'INSERT INTO employees (name, pay_type, rate_cents) VALUES (?, ?, ?)',
-        [employee.name, employee.payType, employee.rateCents],
-        function onInserted(err) {
-            if (err) return res.status(500).send('Error saving employee');
+    withWriteLock(
+        () =>
+            new Promise((resolve, reject) => {
+                db.run(
+                    'INSERT INTO employees (name, pay_type, rate_cents) VALUES (?, ?, ?)',
+                    [employee.name, employee.payType, employee.rateCents],
+                    function onInserted(err) {
+                        if (err) return reject(err);
+                        resolve(this.lastID);
+                    }
+                );
+            })
+    )
+        .then((employeeId) => {
             recordAudit(db, {
                 actor: req.session.user.username,
                 action: 'create',
                 entity: 'employee',
-                entityId: this.lastID,
+                entityId: employeeId,
                 detail: `${employee.name} (${employee.payType})`,
             });
             res.redirect('/?saved=1');
-        }
-    );
+        })
+        .catch(() => res.status(500).send('Error saving employee'));
 });
 
 // The payroll page is a submission form, so read-only viewers are excluded.

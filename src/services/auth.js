@@ -12,6 +12,7 @@
  */
 
 const bcrypt = require('bcryptjs');
+const { withWriteLock } = require('../db/writeLock');
 
 const BCRYPT_ROUNDS = 10;
 
@@ -77,20 +78,25 @@ function hasRole(req, ...roles) {
 
 /** Append an entry to the audit log (never throws). */
 function recordAudit(db, { actor, action, entity, entityId, detail }) {
-  return new Promise((resolve) => {
-    const safeActor = actor || 'anonymous';
-    db.run(
-      'INSERT INTO audit_log (actor, action, entity, entity_id, detail) VALUES (?, ?, ?, ?, ?)',
-      [safeActor, action || 'unknown', entity || null, entityId == null ? null : String(entityId), detail || null],
-      function onInsert(err) {
-        if (err) {
-          console.error('audit log write failed', err.message);
-          return resolve(null);
-        }
-        resolve(this.lastID);
-      }
-    );
-  });
+  const safeActor = actor || 'anonymous';
+  // Goes through the write lock so an audit write can never land inside an
+  // in-flight payroll transaction.
+  return withWriteLock(
+    () =>
+      new Promise((resolve) => {
+        db.run(
+          'INSERT INTO audit_log (actor, action, entity, entity_id, detail) VALUES (?, ?, ?, ?, ?)',
+          [safeActor, action || 'unknown', entity || null, entityId == null ? null : String(entityId), detail || null],
+          function onInsert(err) {
+            if (err) {
+              console.error('audit log write failed', err.message);
+              return resolve(null);
+            }
+            resolve(this.lastID);
+          }
+        );
+      })
+  );
 }
 
 /** Read the audit log, newest first. */

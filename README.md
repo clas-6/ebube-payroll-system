@@ -79,6 +79,7 @@ server.js                     Express app: middleware, routes, error handling
 database.js                   Opens SQLite; runs legacy migration + schema
 scripts/seed.js               Fake demo data seeder (idempotent)
 src/db/schema.js              Table DDL + immutability triggers
+src/db/writeLock.js           FIFO lock that keeps write transactions atomic
 src/services/payroll.js       Pure calculation (cents in, cents out)
 src/services/payrollRun.js    Atomic finalize + history queries
 src/services/auth.js          Hashing, role guards, audit log
@@ -199,10 +200,10 @@ validation error) rather than paying the wrong person.
 npm test
 ```
 
-**128 tests / 26 suites**, covering: money parsing & formatting, payroll math
+**132 tests / 27 suites**, covering: money parsing & formatting, payroll math
 (incl. `gross − tax === net`), the hours-key fix, validation, schema/trigger
-immutability (including the audit log), run persistence, auth/role guards, and
-CSRF.
+immutability (including the audit log), run persistence (and write-lock
+ordering), auth/role guards, and CSRF.
 
 ---
 
@@ -215,6 +216,10 @@ CSRF.
   no login rate-limiting, and no account lockout.
 * `express-session` uses its default in-memory store — it does not survive
   restarts or scale across processes, and is not intended for production.
+* Database writes are serialized in-process by a FIFO lock
+  (`src/db/writeLock.js`), because node-sqlite3 shares one connection per
+  process. That keeps write transactions atomic within a single process, but it
+  does not coordinate several processes sharing the database file.
 * `helmet` is declared as a **devDependency** (kept out of runtime deps so
   `npm ci --omit=dev` still works). If it is absent, the app warns and continues
   **without security headers**. `contentSecurityPolicy` is disabled.

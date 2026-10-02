@@ -9,6 +9,7 @@
  */
 
 const { calculatePaycheck, DEFAULT_TAX_RATE } = require('./payroll');
+const { withWriteLock } = require('../db/writeLock');
 
 const INSERT_PERIOD = `
 INSERT INTO pay_periods (label, pay_frequency, tax_rate, employee_count,
@@ -78,65 +79,70 @@ function finalizePayrollRun(db, { label, payFrequency = 'bi-weekly', taxRate, em
     return Promise.reject(err);
   }
 
-  return new Promise((resolve, reject) => {
-    // Statements are issued FROM WITHIN callbacks: sqlite3 queues parameters
-    // at call time, so issuing them up-front would capture `periodId` before
-    // it has been assigned (and would evaluate the COMMIT/ROLLBACK choice
-    // before any error could be known).
-    db.run('BEGIN TRANSACTION', (beginErr) => {
-      if (beginErr) return reject(beginErr);
+  // The whole transaction runs under the write lock so that a concurrent write
+  // cannot be queued between our BEGIN and COMMIT and get caught up in it.
+  return withWriteLock(
+    () =>
+      new Promise((resolve, reject) => {
+        // Statements are issued FROM WITHIN callbacks: sqlite3 queues
+        // parameters at call time, so issuing them up-front would capture
+        // `periodId` before it has been assigned (and would evaluate the
+        // COMMIT/ROLLBACK choice before any error could be known).
+        db.run('BEGIN TRANSACTION', (beginErr) => {
+          if (beginErr) return reject(beginErr);
 
-      db.run(
-        INSERT_PERIOD,
-        [
-          label.trim(),
-          payFrequency,
-          effectiveTaxRate,
-          stubs.length,
-          totals.grossCents,
-          totals.taxCents,
-          totals.netCents,
-        ],
-        function onPeriod(err) {
-          if (err) {
-            return db.run('ROLLBACK', () => reject(err));
-          }
-          const periodId = this.lastID;
-
-          let index = 0;
-          const insertNext = () => {
-            if (index >= stubs.length) {
-              return db.run('COMMIT', (txErr) => {
-                if (txErr) return db.run('ROLLBACK', () => reject(txErr));
-                resolve({ periodId, stubs, totals });
-              });
-            }
-            const s = stubs[index++];
-            db.run(
-              INSERT_STUB,
-              [
-                periodId,
-                s.employeeId,
-                s.employeeName,
-                s.payType,
-                s.rateCents,
-                s.hours,
-                s.grossCents,
-                s.taxCents,
-                s.netCents,
-                s.taxRate,
-              ],
-              (stubErr) => {
-                if (stubErr) return db.run('ROLLBACK', () => reject(stubErr));
-                insertNext();
+          db.run(
+            INSERT_PERIOD,
+            [
+              label.trim(),
+              payFrequency,
+              effectiveTaxRate,
+              stubs.length,
+              totals.grossCents,
+              totals.taxCents,
+              totals.netCents,
+            ],
+            function onPeriod(err) {
+              if (err) {
+                return db.run('ROLLBACK', () => reject(err));
               }
-            );
-          };
-          insertNext();
-        }
-      );
-    });
-  });
+              const periodId = this.lastID;
+
+              let index = 0;
+              const insertNext = () => {
+                if (index >= stubs.length) {
+                  return db.run('COMMIT', (txErr) => {
+                    if (txErr) return db.run('ROLLBACK', () => reject(txErr));
+                    resolve({ periodId, stubs, totals });
+                  });
+                }
+                const s = stubs[index++];
+                db.run(
+                  INSERT_STUB,
+                  [
+                    periodId,
+                    s.employeeId,
+                    s.employeeName,
+                    s.payType,
+                    s.rateCents,
+                    s.hours,
+                    s.grossCents,
+                    s.taxCents,
+                    s.netCents,
+                    s.taxRate,
+                  ],
+                  (stubErr) => {
+                    if (stubErr) return db.run('ROLLBACK', () => reject(stubErr));
+                    insertNext();
+                  }
+                );
+              };
+              insertNext();
+            }
+          );
+        });
+      })
+  );
 }
 
 /** List all finalized periods, newest first. */
