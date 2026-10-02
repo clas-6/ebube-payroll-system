@@ -164,7 +164,7 @@ route logic runs.
 | GET    | `/`                  | authenticated | Employee list                                     |
 | GET    | `/add-employee`      | admin         | Form                                              |
 | POST   | `/add-employee`      | admin         | Validates; 400 with inline error on bad input     |
-| GET    | `/payroll`           | authenticated | Hours-entry form                                  |
+| GET    | `/payroll`           | admin         | Hours-entry form                                  |
 | POST   | `/calculate-payroll` | admin         | Computes + finalizes a run; 400 / 409 on problems |
 | GET    | `/history`           | authenticated | List of finalized runs                            |
 | GET    | `/history/:id`       | authenticated | Read-only run detail                              |

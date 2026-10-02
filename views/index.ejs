@@ -3,6 +3,7 @@
 <body style="font-family: Arial; padding: 20px;">
     <h1>Employee List</h1>
     <%- include('partials/nav') %>
+    <% if (typeof isAdmin !== 'undefined' && !isAdmin) { %><p style="color: #666;"><em>You are signed in as a viewer. This account is read-only.</em></p><% } %>
     <% if (notice) { %><p style="color: green;"><%= notice %></p><% } %>
     <% if (error) { %><p style="color: red;"><%= error %></p><% } %>
     <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; text-align: left;">

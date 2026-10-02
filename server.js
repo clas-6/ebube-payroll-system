@@ -201,7 +201,8 @@ app.post('/add-employee', requireAuth, requireRole('admin'), (req, res, next) =>
     );
 });
 
-app.get('/payroll', requireAuth, (req, res) => {
+// The payroll page is a submission form, so read-only viewers are excluded.
+app.get('/payroll', requireAuth, requireRole('admin'), (req, res) => {
     db.all('SELECT * FROM employees ORDER BY id', [], (err, employees) => {
         if (err) return res.status(500).send('Database error');
         res.render('payroll', { employees: forDisplay(employees), error: null });
