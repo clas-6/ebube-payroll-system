@@ -30,6 +30,10 @@ describe('schema', () => {
       'pay_stubs_immutable_delete',
       'pay_periods_immutable_update',
       'pay_periods_immutable_delete',
+      'audit_log_immutable_update',
+      'audit_log_immutable_delete',
+      'users',
+      'audit_log',
       'idx_pay_stubs_period',
       'idx_pay_stubs_employee',
     ]) {
@@ -185,5 +189,35 @@ describe('immutability of finalized payroll records', () => {
     const stubs = await all(db, 'SELECT COUNT(*) AS n FROM pay_stubs');
     assert.equal(periods[0].n, 1);
     assert.equal(stubs[0].n, 1);
+  });
+});
+
+describe('immutability of the audit log', () => {
+  test('an audit entry can be appended', async () => {
+    const { lastID } = await run(
+      db,
+      `INSERT INTO audit_log (actor, action, entity, entity_id, detail)
+       VALUES (?, ?, ?, ?, ?)`,
+      ['admin', 'create', 'employee', '1', 'Demo Alice (salary)']
+    );
+    assert.ok(lastID);
+  });
+
+  test('an audit entry cannot be UPDATED', async () => {
+    await assert.rejects(
+      run(db, "UPDATE audit_log SET actor = 'someone-else'"),
+      /immutable/i
+    );
+  });
+
+  test('an audit entry cannot be DELETED', async () => {
+    await assert.rejects(run(db, 'DELETE FROM audit_log'), /immutable/i);
+  });
+
+  test('the appended entry survives the rejected mutations', async () => {
+    const rows = await all(db, 'SELECT actor, action FROM audit_log');
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].actor, 'admin');
+    assert.equal(rows[0].action, 'create');
   });
 });

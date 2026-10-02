@@ -106,9 +106,9 @@ Five tables (`src/db/schema.js`). **All `*_cents` columns are INTEGER minor unit
 
 ### Immutability
 
-`BEFORE UPDATE` / `BEFORE DELETE` triggers on `pay_periods` and `pay_stubs` call
-`RAISE(ABORT, ...)`, so finalized records can be **inserted but never changed or
-removed**. The test suite asserts these triggers actually fire.
+`BEFORE UPDATE` / `BEFORE DELETE` triggers on `pay_periods`, `pay_stubs` and
+`audit_log` call `RAISE(ABORT, ...)`, so those records can be **inserted but
+never changed or removed**. The test suite asserts these triggers actually fire.
 
 ### Legacy data
 
@@ -199,9 +199,10 @@ validation error) rather than paying the wrong person.
 npm test
 ```
 
-**124 tests / 25 suites**, covering: money parsing & formatting, payroll math
+**128 tests / 26 suites**, covering: money parsing & formatting, payroll math
 (incl. `gross − tax === net`), the hours-key fix, validation, schema/trigger
-immutability, run persistence, auth/role guards, and CSRF.
+immutability (including the audit log), run persistence, auth/role guards, and
+CSRF.
 
 ---
 

@@ -107,6 +107,18 @@ const STATEMENTS = [
    BEGIN
        SELECT RAISE(ABORT, 'Pay periods are immutable once finalized');
    END`,
+  // The audit trail is append-only: entries may be added but never rewritten
+  // or erased, so a past action cannot be hidden after the fact.
+  `CREATE TRIGGER IF NOT EXISTS audit_log_immutable_update
+   BEFORE UPDATE ON audit_log
+   BEGIN
+       SELECT RAISE(ABORT, 'Audit log entries are immutable');
+   END`,
+  `CREATE TRIGGER IF NOT EXISTS audit_log_immutable_delete
+   BEFORE DELETE ON audit_log
+   BEGIN
+       SELECT RAISE(ABORT, 'Audit log entries are immutable');
+   END`,
   `CREATE INDEX IF NOT EXISTS idx_pay_stubs_period ON pay_stubs(period_id)`,
   `CREATE INDEX IF NOT EXISTS idx_pay_stubs_employee ON pay_stubs(employee_id)`,
 ];
