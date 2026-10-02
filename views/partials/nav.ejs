@@ -1,0 +1,19 @@
+<nav style="margin-bottom: 12px;">
+    <a href="/">Home</a>
+    <a href="/add-employee">Add Employee</a>
+    <a href="/payroll">Run Payroll</a>
+    <a href="/history">Payroll History</a>
+    <% if (typeof isAdmin !== 'undefined' && isAdmin) { %><a href="/audit">Audit Log</a><% } %>
+    <span style="float: right;">
+        <% if (typeof currentUser !== 'undefined' && currentUser) { %>
+            Signed in as <strong><%= currentUser.username %></strong> (<%= currentUser.role %>)
+            <form action="/logout" method="POST" style="display:inline;">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button type="submit">Sign out</button>
+            </form>
+        <% } else { %>
+            <a href="/login">Sign in</a>
+        <% } %>
+    </span>
+</nav>
+<hr>

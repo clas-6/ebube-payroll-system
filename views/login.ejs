@@ -18,6 +18,7 @@
         <h1>Ebube Payroll - Sign in</h1>
         <% if (error) { %><p class="error"><%= error %></p><% } %>
         <form action="/login" method="POST">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <label for="username">Username</label>
             <input id="username" type="text" name="username" autocomplete="username" required autofocus>
             <label for="password">Password</label>

@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html>
 <body style="font-family: Arial; padding: 20px;">
+    <%- include('partials/nav') %>
     <h1>Run Payroll</h1>
-    <a href="/">Back to Home</a><hr>
     <% if (error) { %><p style="color: red;"><%= error %></p><% } %>
     <form action="/calculate-payroll" method="POST">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <p>
             <label>Period label:</label><br>
             <input type="text" name="period_label" maxlength="80" placeholder="e.g. 2026-01-01 to 2026-01-14">

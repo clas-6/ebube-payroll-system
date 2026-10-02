@@ -17,12 +17,7 @@
     </style>
 </head>
 <body>
-    <nav>
-        <a href="/">Home</a>
-        <a href="/add-employee">Add Employee</a>
-        <a href="/payroll">Run Payroll</a>
-        <a href="/history">History</a>
-    </nav>
+    <%- include('partials/nav') %>
     <h1>Payroll Run #<%= period.id %></h1>
     <p class="immutable">Read-only: finalized payroll records are immutable.</p>
 

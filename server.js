@@ -18,6 +18,7 @@ const {
     recordAudit,
     listAudit,
 } = require('./src/services/auth');
+const { csrfTokenMiddleware, csrfProtection } = require('./src/middleware/csrf');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -54,6 +55,10 @@ app.use((req, res, next) => {
     res.locals.isAdmin = Boolean(req.session.user && req.session.user.role === 'admin');
     next();
 });
+
+// CSRF: mint/refresh a per-session token, then validate it on all writes.
+app.use(csrfTokenMiddleware);
+app.use(csrfProtection);
 
 // Prepare employee rows for display (money formatting happens here only).
 function forDisplay(rows) {

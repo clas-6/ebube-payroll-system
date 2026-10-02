@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html>
 <body style="font-family: Arial; padding: 20px;">
+    <%- include('partials/nav') %>
     <h1>Add Employee</h1>
-    <a href="/">Back to Home</a><hr>
     <% if (error) { %><p style="color: red;"><%= error %></p><% } %>
     <form action="/add-employee" method="POST">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <p><label>Name:</label><br><input type="text" name="name" maxlength="120" value="<%= values.name || '' %>" required></p>
         <p>
             <label>Pay Type:</label><br>

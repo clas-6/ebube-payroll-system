@@ -16,12 +16,7 @@
     </style>
 </head>
 <body>
-    <nav>
-        <a href="/">Home</a>
-        <a href="/add-employee">Add Employee</a>
-        <a href="/payroll">Run Payroll</a>
-        <a href="/history">History</a>
-    </nav>
+    <%- include('partials/nav') %>
     <h1>Payroll Results</h1>
     <p class="saved">Saved as an immutable record: <strong><%= label %></strong> (run #<%= periodId %>).</p>
     <p class="disclaimer">Note: System uses a 15% flat tax rate and calculates bi-weekly pay for salaried employees. Demo figures only - not legal or tax advice.</p>
