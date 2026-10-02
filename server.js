@@ -81,6 +81,15 @@ function forDisplay(rows) {
     }));
 }
 
+// Render the shared error page for a missing resource (keeps 404s styled and
+// consistent with the 403 page rather than a bare text response).
+function renderNotFound(res) {
+    return res.status(404).render('error', {
+        status: 404,
+        message: 'The page you requested was not found.',
+    });
+}
+
 // ---------------------------------------------------------------------------
 // Authentication
 // ---------------------------------------------------------------------------
@@ -316,12 +325,12 @@ app.get('/history', requireAuth, (req, res, next) => {
 app.get('/history/:id', requireAuth, (req, res, next) => {
     const periodId = Number(req.params.id);
     if (!Number.isInteger(periodId) || periodId <= 0) {
-        return res.status(404).send('Not found');
+        return renderNotFound(res);
     }
 
     Promise.all([getPeriod(db, periodId), listStubsForPeriod(db, periodId)])
         .then(([period, stubs]) => {
-            if (!period) return res.status(404).send('Not found');
+            if (!period) return renderNotFound(res);
             res.render('history-detail', {
                 period: {
                     id: period.id,
@@ -353,9 +362,9 @@ function defaultPeriodLabel() {
     return `Payroll run ${iso}`;
 }
 
-// 404 handler
+// 404 handler - render the same styled error page the rest of the app uses.
 app.use((req, res) => {
-    res.status(404).send('Not found');
+    renderNotFound(res);
 });
 
 // Centralized error handler - never leaks stack traces to the client.
