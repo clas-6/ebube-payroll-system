@@ -1,5 +1,7 @@
 const express = require('express');
 const path = require('path');
+const session = require('express-session');
+const helmet = require('helmet');
 const db = require('./database');
 
 const { PayrollInputError } = require('./src/services/payroll');
@@ -7,13 +9,51 @@ const { finalizePayrollRun, listPeriods, listStubsForPeriod, getPeriod } = requi
 const { validateEmployee, validateHours, ValidationError } = require('./src/utils/validate');
 const { extractHoursMap, toHours } = require('./src/utils/hours');
 const { formatCents } = require('./src/utils/money');
+const {
+    hashPassword,
+    verifyPassword,
+    findUserByUsername,
+    requireAuth,
+    requireRole,
+    recordAudit,
+    listAudit,
+} = require('./src/services/auth');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
+const SESSION_SECRET = process.env.SESSION_SECRET || 'dev-only-insecure-secret-change-me';
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+
+// Security headers. `helmet` is a dev dependency here so `npm ci --omit=dev`
+// still works; it is no-ops gracefully if ever absent in production builds.
+try {
+    app.use(helmet({ contentSecurityPolicy: false }));
+} catch (err) {
+    console.warn('helmet unavailable; security headers not applied');
+}
+
+app.use(
+    session({
+        secret: SESSION_SECRET,
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+            httpOnly: true,
+            sameSite: 'lax',
+            maxAge: 8 * 60 * 60 * 1000, // 8 hours
+        },
+    })
+);
 app.use(express.urlencoded({ extended: true, limit: '50kb' }));
+
+// Expose the current user and role helper to every view.
+app.use((req, res, next) => {
+    res.locals.currentUser = req.session.user || null;
+    res.locals.isAdmin = Boolean(req.session.user && req.session.user.role === 'admin');
+    next();
+});
 
 // Prepare employee rows for display (money formatting happens here only).
 function forDisplay(rows) {
@@ -23,7 +63,69 @@ function forDisplay(rows) {
     }));
 }
 
-app.get('/', (req, res) => {
+// ---------------------------------------------------------------------------
+// Authentication
+// ---------------------------------------------------------------------------
+
+app.get('/login', (req, res) => {
+    if (req.session.user) return res.redirect('/');
+    res.render('login', { error: null });
+});
+
+app.post('/login', (req, res) => {
+    const username = String(req.body.username || '').trim();
+    const password = String(req.body.password || '');
+
+    findUserByUsername(db, username)
+        .then((user) => {
+            if (!user) {
+                recordAudit(db, { actor: username || 'anonymous', action: 'login_failed', detail: 'unknown user' });
+                return res.status(401).render('login', { error: 'Invalid username or password.' });
+            }
+            return verifyPassword(password, user.password_hash).then((ok) => {
+                if (!ok) {
+                    recordAudit(db, { actor: user.username, action: 'login_failed', detail: 'bad password' });
+                    return res.status(401).render('login', { error: 'Invalid username or password.' });
+                }
+                req.session.user = { id: user.id, username: user.username, role: user.role };
+                recordAudit(db, { actor: user.username, action: 'login', detail: `role=${user.role}` });
+                return res.redirect('/');
+            });
+        })
+        .catch(() => res.status(500).render('login', { error: 'Unable to sign in right now.' }));
+});
+
+app.post('/logout', (req, res) => {
+    const actor = req.session.user ? req.session.user.username : 'anonymous';
+    req.session.destroy(() => {
+        recordAudit(db, { actor, action: 'logout' });
+        res.redirect('/login');
+    });
+});
+
+// Audit log is admin-only.
+app.get('/audit', requireAuth, requireRole('admin'), (req, res, next) => {
+    listAudit(db, 200)
+        .then((entries) => {
+            res.render('audit', {
+                entries: entries.map((e) => ({
+                    actor: e.actor,
+                    action: e.action,
+                    entity: e.entity,
+                    entityId: e.entity_id,
+                    detail: e.detail,
+                    createdAt: e.created_at,
+                })),
+            });
+        })
+        .catch(next);
+});
+
+// ---------------------------------------------------------------------------
+// Application routes (read-only for viewers, writes require admin)
+// ---------------------------------------------------------------------------
+
+app.get('/', requireAuth, (req, res) => {
     db.all('SELECT * FROM employees ORDER BY id', [], (err, rows) => {
         if (err) return res.status(500).send('Database error');
         res.render('index', {
@@ -34,11 +136,11 @@ app.get('/', (req, res) => {
     });
 });
 
-app.get('/add-employee', (req, res) => {
+app.get('/add-employee', requireAuth, requireRole('admin'), (req, res) => {
     res.render('add-employee', { error: null, values: {} });
 });
 
-app.post('/add-employee', (req, res) => {
+app.post('/add-employee', requireAuth, requireRole('admin'), (req, res, next) => {
     let employee;
     try {
         employee = validateEmployee(req.body);
@@ -49,27 +151,34 @@ app.post('/add-employee', (req, res) => {
                 values: req.body || {},
             });
         }
-        throw err;
+        return next(err);
     }
 
     db.run(
         'INSERT INTO employees (name, pay_type, rate_cents) VALUES (?, ?, ?)',
         [employee.name, employee.payType, employee.rateCents],
-        (err) => {
+        function onInserted(err) {
             if (err) return res.status(500).send('Error saving employee');
+            recordAudit(db, {
+                actor: req.session.user.username,
+                action: 'create',
+                entity: 'employee',
+                entityId: this.lastID,
+                detail: `${employee.name} (${employee.payType})`,
+            });
             res.redirect('/?saved=1');
         }
     );
 });
 
-app.get('/payroll', (req, res) => {
+app.get('/payroll', requireAuth, (req, res) => {
     db.all('SELECT * FROM employees ORDER BY id', [], (err, employees) => {
         if (err) return res.status(500).send('Database error');
         res.render('payroll', { employees: forDisplay(employees), error: null });
     });
 });
 
-app.post('/calculate-payroll', (req, res, next) => {
+app.post('/calculate-payroll', requireAuth, requireRole('admin'), (req, res, next) => {
     const hoursMap = extractHoursMap(req.body);
     const label =
         typeof req.body.period_label === 'string' && req.body.period_label.trim()
@@ -110,6 +219,13 @@ app.post('/calculate-payroll', (req, res, next) => {
             hoursMap: hoursById,
         })
             .then(({ periodId, stubs, totals }) => {
+                recordAudit(db, {
+                    actor: req.session.user.username,
+                    action: 'finalize_payroll_run',
+                    entity: 'pay_period',
+                    entityId: periodId,
+                    detail: `${label} | employees=${stubs.length} | net=${formatCents(totals.netCents)}`,
+                });
                 res.render('payroll-results', {
                     periodId,
                     label,
@@ -146,7 +262,7 @@ app.post('/calculate-payroll', (req, res, next) => {
 });
 
 // Payroll history: list of finalized runs.
-app.get('/history', (req, res, next) => {
+app.get('/history', requireAuth, (req, res, next) => {
     listPeriods(db)
         .then((periods) => {
             res.render('history', {
@@ -166,7 +282,7 @@ app.get('/history', (req, res, next) => {
 });
 
 // Detail view for one finalized run (read-only; rows are immutable).
-app.get('/history/:id', (req, res, next) => {
+app.get('/history/:id', requireAuth, (req, res, next) => {
     const periodId = Number(req.params.id);
     if (!Number.isInteger(periodId) || periodId <= 0) {
         return res.status(404).send('Not found');

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sign in</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 40px; background: #fafafa; color: #222; }
+        .box { max-width: 380px; margin: 0 auto; background: #fff; border: 1px solid #ddd; padding: 32px; }
+        h1 { margin-top: 0; font-size: 1.4em; }
+        label { display: block; margin-top: 14px; font-weight: bold; }
+        input { width: 100%; padding: 9px; margin-top: 5px; box-sizing: border-box; }
+        button { margin-top: 20px; padding: 10px 18px; font-size: 15px; cursor: pointer; }
+        .error { color: #b3261e; }
+        .hint { color: #666; font-size: 0.85em; margin-top: 18px; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h1>Ebube Payroll - Sign in</h1>
+        <% if (error) { %><p class="error"><%= error %></p><% } %>
+        <form action="/login" method="POST">
+            <label for="username">Username</label>
+            <input id="username" type="text" name="username" autocomplete="username" required autofocus>
+            <label for="password">Password</label>
+            <input id="password" type="password" name="password" autocomplete="current-password" required>
+            <button type="submit">Sign in</button>
+        </form>
+        <p class="hint">Demo roles: <strong>admin</strong> (full access) and <strong>viewer</strong> (read-only).</p>
+    </div>
+</body>
+</html>

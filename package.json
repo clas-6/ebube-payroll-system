@@ -5,6 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
+    "seed": "node scripts/seed.js",
     "test": "node --test --test-reporter spec"
   },
   "keywords": [],
@@ -12,8 +13,13 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "ejs": "^6.0.1",
     "express": "^5.2.1",
+    "express-session": "^1.19.0",
     "sqlite3": "^6.0.1"
+  },
+  "devDependencies": {
+    "helmet": "^8.3.0"
   }
 }

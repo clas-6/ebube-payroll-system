@@ -19,6 +19,14 @@
         <a href="/add-employee">Add Employee</a>
         <a href="/payroll">Run Payroll</a>
         <a href="/history">History</a>
+        <span style="float: right;">
+            <% if (currentUser) { %>
+                Signed in as <strong><%= currentUser.username %></strong> (<%= currentUser.role %>)
+                <form action="/logout" method="POST" style="display:inline;">
+                    <button type="submit">Sign out</button>
+                </form>
+            <% } %>
+        </span>
     </nav>
     <h1>Payroll History</h1>
     <p><em>Finalized runs are immutable - they cannot be edited or deleted.</em></p>

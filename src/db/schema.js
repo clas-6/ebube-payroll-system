@@ -13,6 +13,26 @@
  * application code, so it holds even if a bug (or a future route) tries.
  */
 
+const USERS_DDL = `
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE COLLATE NOCASE,
+    password_hash TEXT NOT NULL,
+    role TEXT NOT NULL CHECK (role IN ('admin', 'viewer')),
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+)`;
+
+const AUDIT_LOG_DDL = `
+CREATE TABLE IF NOT EXISTS audit_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    actor TEXT NOT NULL,
+    action TEXT NOT NULL,
+    entity TEXT,
+    entity_id TEXT,
+    detail TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+)`;
+
 const EMPLOYEES_DDL = `
 CREATE TABLE IF NOT EXISTS employees (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -64,6 +84,9 @@ const STATEMENTS = [
   EMPLOYEES_DDL,
   PAY_PERIODS_DDL,
   PAY_STUBS_DDL,
+  USERS_DDL,
+  AUDIT_LOG_DDL,
+  `CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log(created_at)`,
   `CREATE TRIGGER IF NOT EXISTS pay_stubs_immutable_update
    BEFORE UPDATE ON pay_stubs
    BEGIN
@@ -113,4 +136,6 @@ module.exports = {
   EMPLOYEES_DDL,
   PAY_PERIODS_DDL,
   PAY_STUBS_DDL,
+  USERS_DDL,
+  AUDIT_LOG_DDL,
 };

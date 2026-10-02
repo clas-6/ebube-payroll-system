@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Audit Log</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 24px; background: #fafafa; color: #222; }
+        h1 { margin-top: 0; }
+        nav a { margin-right: 12px; }
+        table { border-collapse: collapse; width: 100%; background: #fff; }
+        th, td { border: 1px solid #ddd; padding: 8px 10px; text-align: left; font-size: 0.92em; }
+        th { background: #f2f2f2; }
+        .empty { color: #666; font-style: italic; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/">Home</a>
+        <a href="/add-employee">Add Employee</a>
+        <a href="/payroll">Run Payroll</a>
+        <a href="/history">History</a>
+        <a href="/audit">Audit Log</a>
+    </nav>
+    <h1>Audit Log</h1>
+    <p><em>Who changed what, newest first. Latest 200 entries.</em></p>
+
+    <% if (entries.length === 0) { %>
+        <p class="empty">No audit entries yet.</p>
+    <% } else { %>
+    <table>
+        <tr>
+            <th>Timestamp (UTC)</th><th>Actor</th><th>Action</th><th>Entity</th><th>Entity ID</th><th>Detail</th>
+        </tr>
+        <% entries.forEach(function(e) { %>
+            <tr>
+                <td><%= e.createdAt %></td>
+                <td><%= e.actor %></td>
+                <td><%= e.action %></td>
+                <td><%= e.entity || '-' %></td>
+                <td><%= e.entityId || '-' %></td>
+                <td><%= e.detail || '' %></td>
+            </tr>
+        <% }); %>
+    </table>
+    <% } %>
+</body>
+</html>
