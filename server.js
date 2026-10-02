@@ -1,7 +1,6 @@
 const express = require('express');
 const path = require('path');
 const session = require('express-session');
-const helmet = require('helmet');
 const db = require('./database');
 
 const { PayrollInputError } = require('./src/services/payroll');
@@ -27,11 +26,18 @@ const SESSION_SECRET = process.env.SESSION_SECRET || 'dev-only-insecure-secret-c
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Security headers. `helmet` is a dev dependency here so `npm ci --omit=dev`
-// still works; it is no-ops gracefully if ever absent in production builds.
+// Security headers. `helmet` is a devDependency, so a production install
+// (`npm ci --omit=dev`) may not include it. Requiring it at the top of the
+// file would crash startup, so it is loaded lazily and skipped if absent.
+let helmet = null;
 try {
-    app.use(helmet({ contentSecurityPolicy: false }));
+    helmet = require('helmet');
 } catch (err) {
+    helmet = null;
+}
+if (helmet) {
+    app.use(helmet({ contentSecurityPolicy: false }));
+} else {
     console.warn('helmet unavailable; security headers not applied');
 }
 
