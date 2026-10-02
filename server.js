@@ -105,9 +105,21 @@ app.post('/login', (req, res) => {
                     recordAudit(db, { actor: user.username, action: 'login_failed', detail: 'bad password' });
                     return res.status(401).render('login', { error: 'Invalid username or password.' });
                 }
-                req.session.user = { id: user.id, username: user.username, role: user.role };
-                recordAudit(db, { actor: user.username, action: 'login', detail: `role=${user.role}` });
-                return res.redirect('/');
+                // Guard against session fixation: issue a fresh session id when
+                // privileges are granted, then attach the authenticated user.
+                return req.session.regenerate((regenErr) => {
+                    if (regenErr) {
+                        recordAudit(db, {
+                            actor: user.username,
+                            action: 'login_failed',
+                            detail: 'session regenerate error',
+                        });
+                        return res.status(500).render('login', { error: 'Unable to sign in right now.' });
+                    }
+                    req.session.user = { id: user.id, username: user.username, role: user.role };
+                    recordAudit(db, { actor: user.username, action: 'login', detail: `role=${user.role}` });
+                    return res.redirect('/');
+                });
             });
         })
         .catch(() => res.status(500).render('login', { error: 'Unable to sign in right now.' }));
