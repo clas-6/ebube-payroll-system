@@ -21,7 +21,11 @@ const { csrfTokenMiddleware, csrfProtection } = require('./src/middleware/csrf')
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
-const SESSION_SECRET = process.env.SESSION_SECRET || 'dev-only-insecure-secret-change-me';
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+const FALLBACK_SESSION_SECRET = 'dev-only-insecure-secret-change-me';
+// Tracked so we can refuse to start in production with a known-public secret.
+const USING_FALLBACK_SECRET = !process.env.SESSION_SECRET;
+const SESSION_SECRET = process.env.SESSION_SECRET || FALLBACK_SESSION_SECRET;
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -49,6 +53,9 @@ app.use(
         cookie: {
             httpOnly: true,
             sameSite: 'lax',
+            // Only send the cookie over HTTPS in production. Set to false in
+            // local/dev so it works over plain http://localhost.
+            secure: IS_PRODUCTION,
             maxAge: 8 * 60 * 60 * 1000, // 8 hours
         },
     })
@@ -349,6 +356,19 @@ app.use((err, req, res, next) => {
 });
 
 if (require.main === module) {
+    if (USING_FALLBACK_SECRET) {
+        if (IS_PRODUCTION) {
+            console.error(
+                'FATAL: SESSION_SECRET must be set when NODE_ENV=production. ' +
+                    'Refusing to start with a publicly-known default secret.'
+            );
+            process.exit(1);
+        }
+        console.warn(
+            'WARNING: using an insecure default SESSION_SECRET. ' +
+                'Set SESSION_SECRET before any use beyond a local demo.'
+        );
+    }
     app.listen(PORT, () => {
         console.log(`Server is running on http://localhost:${PORT}`);
     });
